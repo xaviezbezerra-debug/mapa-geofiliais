@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoFiliais - Detalhes Pro</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; overflow: hidden; }
+        #map-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        }
+
+        .photo-pin {
+            border-radius: 50%; border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background-size: cover; background-position: center;
+            transition: transform 0.2s;
+        }
+        .photo-pin:hover { transform: scale(1.2); z-index: 1000 !important; }
+
+        .preview-container {
+            position: relative; width: 34px; height: 34px; border-radius: 50%;
+            overflow: hidden; border: 1.5px solid #e2e8f0; background: #f1f5f9;
+        }
+        
+        .category-item.active { background: white; border-color: #3b82f6; }
+
+        .leaflet-popup-content-wrapper { border-radius: 16px; padding: 0; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); }
+        .leaflet-popup-content { margin: 0 !important; width: 280px !important; }
+        .leaflet-popup-close-button { color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        
+        #sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; }
+        .sidebar-hidden { transform: translateX(-120%); opacity: 0; pointer-events: none; }
+        
+        .pdf-mode header, .pdf-mode #btn-show, .pdf-mode aside { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="map-container"></div>
+
+    <div id="details-modal" class="fixed inset-0 z-50 bg-black/40 hidden items-center justify-center transition-opacity">
+        <div class="bg-white rounded-2xl w-[90vw] max-w-6xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col animate-fade-in-up">
+            <div class="relative px-4 py-3 border-b bg-white flex flex-col gap-2">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xs font-black text-slate-700 uppercase tracking-widest">Detalhamento Geo-Estatístico</h2>
+                    <div id="modal-total-counter" class="text-[10px] text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                        Carregando...
+                    </div>
+                </div>
+                <button onclick="closeDetails()" class="absolute top-3 right-4 w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                
+                <div class="flex flex-wrap gap-3 mt-1 bg-slate-50 p-2 rounded-lg text-[10px]">
+                    <select id="f-uf" onchange="filterChanged('uf')" class="px-2 py-1 rounded border border-slate-200 outline-none hover:border-blue-300 transition cursor-pointer min-w-[60px]"><option value="">UF</option></select>
+                    <select id="f-cidade" onchange="filterChanged('cidade')" class="px-2 py-1 rounded border border-slate-200 outline-none hover:border-blue-300 transition cursor-pointer min-w-[120px]"><option value="">Cidade</option></select>
+                    <select id="f-bairro" onchange="filterChanged('bairro')" class="px-2 py-1 rounded border border-slate-200 outline-none hover:border-blue-300 transition cursor-pointer min-w-[120px]"><option value="">Bairro</option></select>
+                    <select id="f-tipo" onchange="filterChanged('tipo')" class="px-2 py-1 rounded border border-slate-200 outline-none hover:border-blue-300 transition cursor-pointer min-w-[100px]"><option value="">Tipo</option></select>
+                    <button onclick="resetDetailFilters()" class="ml-auto px-3 py-1 rounded bg-white border text-slate-400 hover:text-red-500 transition">Limpar Filtros</button>
+                </div>
+            </div>
+
+            <div class="overflow-auto flex-1">
+                <table class="w-full text-[11px]">
+                    <thead class="sticky top-0 bg-slate-100 text-slate-500 uppercase z-10 shadow-sm">
+                        <tr>
+                            <th class="p-3 text-left w-[5%]">UF</th>
+                            <th class="p-3 text-left w-[20%]">Cidade</th>
+                            <th class="p-3 text-left w-[20%]">Bairro</th>
+                            <th class="p-3 text-center w-[10%]">Total</th>
+                            <th class="p-3 text-left w-[45%]">Detalhamento por Tipo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="details-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <button onclick="toggleSidebar()" id="btn-show" class="fixed top-28 left-6 z-20 w-10 h-10 glass-panel rounded-full flex items-center justify-center text-slate-600 hover:text-blue-600 transition-all pointer-events-auto opacity-0 scale-0">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <div id="main-content" class="relative z-10 h-screen flex flex-col p-6 pointer-events-none">
+        <header class="glass-panel rounded-3xl p-4 mb-6 flex justify-between items-center pointer-events-auto max-w-5xl mx-auto w-full">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center shadow-xl">
+                    <i class="fa-solid fa-map-location-dot text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-black text-slate-800 leading-none">Frente de Caixa</h1>
+                    <span class="text-[10px] text-blue-600 font-bold uppercase tracking-widest">Análise Geográfica</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div id="loading-indicator" class="hidden flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
+                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-ping"></div>
+                    <span id="progress-text" class="text-xs font-bold text-slate-600">0%</span>
+                </div>
+                <button onclick="openDetails()" title="Ver tabela detalhada" class="w-10 h-10 rounded-full flex items-center justify-center bg-white/70 hover:bg-white text-slate-500 hover:text-blue-600 border border-slate-200 transition-all">
+                    <i class="fa-solid fa-table-list text-sm"></i>
+                </button>
+                <label title="Importar Excel" class="cursor-pointer w-10 h-10 rounded-full flex items-center justify-center bg-white/70 hover:bg-white text-slate-500 hover:text-green-600 border border-slate-200 shadow-sm transition-all">
+                    <i class="fa-solid fa-file-excel text-sm"></i>
+                    <input type="file" id="fileUpload" accept=".xlsx, .xls" class="hidden">
+                </label>
+            </div>
+        </header>
+
+        <div class="flex flex-1 gap-6 overflow-hidden max-w-7xl mx-auto w-full">
+            <aside id="sidebar" class="glass-panel w-72 rounded-[32px] p-5 flex flex-col pointer-events-auto">
+                <div class="flex items-center justify-between mb-4 border-b pb-2">
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filtros por Tipo</h3>
+                    <button onclick="toggleSidebar()" class="text-slate-400 hover:text-red-500 transition-colors">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto space-y-1 pr-2 scrollbar-thin scrollbar-thumb-slate-200" id="filter-container"></div>
+                <div class="mt-4 pt-4 border-t opacity-40 hover:opacity-100 transition-opacity">
+                    <button onclick="exportToPDF()" class="w-full text-[8px] font-bold text-slate-500 flex items-center justify-center gap-2 uppercase tracking-widest">
+                        <i class="fa-solid fa-file-pdf"></i> Gerar PDF
+                    </button>
+                </div>
+            </aside>
+            <div class="flex-1"></div>
+            <div id="stats-panel" class="glass-panel self-end mb-4 p-5 rounded-[24px] pointer-events-auto min-w-[180px]">
+                <div class="flex flex-col gap-3">
+                    <div class="flex justify-between items-end">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Unidades</span>
+                        <span id="total-units" class="text-2xl font-black text-slate-800">0</span>
+                    </div>
+                    <div class="flex justify-between items-end border-t pt-2 border-slate-100">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Cidades</span>
+                        <span id="total-cities" class="text-2xl font-black text-blue-600">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CATEGORIES = {
+            'Bairro':     { color: '#10b981', icon: 'fa-basket-shopping' },
+            'Drogaria':   { color: '#3b82f6', icon: 'fa-pills' },
+            'Posto':      { color: '#f59e0b', icon: 'fa-gas-pump' },
+            'Hiper':      { color: '#8b5cf6', icon: 'fa-cart-shopping' },
+            'Market':     { color: '#06b6d4', icon: 'fa-shop' },
+            'Express':    { color: '#ec4899', icon: 'fa-bolt' },
+            'Sam´s Club': { color: '#0f172a', icon: 'fa-gem' },
+            'Atacadão':   { color: '#ef4444', icon: 'fa-boxes-stacked' }
+        };
+
+        let allData = [];
+        let selectedFilters = new Set();
+        let categoryPhotos = {};
+        let detailFilters = { uf: '', cidade: '', bairro: '', tipo: '' };
+
+        const map = L.map('map-container', { zoomControl: false, minZoom: 4 }).setView([-14.2350, -51.9253], 4);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+        let markersLayer = L.layerGroup().addTo(map);
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const btn = document.getElementById('btn-show');
+            sidebar.classList.toggle('sidebar-hidden');
+            const isHidden = sidebar.classList.contains('sidebar-hidden');
+            btn.classList.toggle('opacity-0', !isHidden);
+            btn.classList.toggle('scale-0', !isHidden);
+        }
+
+        function initUI() {
+            const container = document.getElementById('filter-container');
+            container.innerHTML = `<button onclick="resetFilters()" class="w-full text-center py-1 rounded-lg hover:bg-white text-[9px] font-bold text-slate-400 hover:text-blue-600 transition mb-2 uppercase">Limpar Filtros</button>`;
+            Object.keys(CATEGORIES).forEach(key => {
+                const config = CATEGORIES[key];
+                const count = allData.filter(d => d.tipo === key).length;
+                const isActive = selectedFilters.has(key);
+                const item = document.createElement('div');
+                item.className = `category-item flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer border border-transparent hover:bg-white group ${isActive ? 'active shadow-sm' : ''}`;
+                item.onclick = (e) => { if(e.target.tagName !== 'INPUT') toggleFilter(key); };
+                item.innerHTML = `
+                    <div class="preview-container shrink-0">
+                        ${categoryPhotos[key] ? `<img src="${categoryPhotos[key]}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50"><i class="fa-solid ${config.icon} text-[10px]"></i></div>`}
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-[11px] font-semibold text-slate-600">${key}</p>
+                    </div>
+                    <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-md">${count}</span>
+                    <label class="opacity-0 group-hover:opacity-100 cursor-pointer p-1 text-slate-300 hover:text-blue-500 transition-all">
+                        <i class="fa-solid fa-camera text-[9px]"></i>
+                        <input type="file" class="hidden" onchange="uploadPhoto(event, '${key}')" accept="image/*">
+                    </label>`;
+                container.appendChild(item);
+            });
+        }
+
+        function toggleFilter(type) {
+            selectedFilters.has(type) ? selectedFilters.delete(type) : selectedFilters.add(type);
+            updateMap();
+            initUI();
+        }
+
+        function resetFilters() {
+            selectedFilters.clear();
+            updateMap();
+            initUI();
+        }
+
+        function updateMap() {
+            markersLayer.clearLayers();
+            const filtered = selectedFilters.size === 0 ? allData : allData.filter(d => selectedFilters.has(d.tipo));
+            filtered.forEach(createMarker);
+            updateStats(filtered);
+            if(filtered.length > 0) map.fitBounds(L.featureGroup(markersLayer.getLayers()).getBounds().pad(0.1));
+        }
+
+        function createMarker(item) {
+            const config = CATEGORIES[item.tipo] || { color: '#94a3b8', icon: 'fa-location-dot' };
+            const photo = categoryPhotos[item.tipo];
+            const html = photo 
+                ? `<div class="photo-pin" style="width: 44px; height: 44px; background-image: url('${photo}')"></div>`
+                : `<div class="photo-pin flex items-center justify-center text-white" style="width: 32px; height: 32px; background-color: ${config.color}"><i class="fa-solid ${config.icon} text-xs"></i></div>`;
+            const icon = L.divIcon({ className: '', html, iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -15] });
+            const popupHtml = `
+                <div class="flex flex-col w-full h-full bg-white">
+                    ${photo ? 
+                        `<div class="w-full h-32 bg-cover bg-center shrink-0" style="background-image: url('${photo}')"></div>` : 
+                        `<div class="w-full h-16 bg-slate-50 flex items-center justify-center text-slate-300"><i class="fa-solid ${config.icon} text-2xl"></i></div>`
+                    }
+                    <div class="p-4 flex flex-col gap-2">
+                        <div><span class="inline-block px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 border border-blue-100 text-[10px] font-black uppercase tracking-widest">${item.tipo}</span></div>
+                        <h3 class="text-sm font-bold text-slate-800 leading-tight">${item['Nome da Unidade']}</h3>
+                        <div class="border-t border-slate-100 pt-2 mt-1">
+                            <p class="text-[11px] text-slate-500 leading-snug font-medium">${item.Logradouro || 'Endereço não informado'}</p>
+                            <p class="text-[11px] text-slate-400 leading-snug">${item.Bairro ? item.Bairro : ''}</p>
+                        </div>
+                        <div class="flex items-center gap-1.5 mt-1 pt-2">
+                            <i class="fa-solid fa-location-dot text-[10px] text-slate-300"></i>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">${item.Cidade} • ${item.UF}</span>
+                        </div>
+                    </div>
+                </div>`;
+            L.marker([item.lat, item.lng], { icon }).addTo(markersLayer).bindPopup(popupHtml);
+        }
+
+        function updateStats(data) {
+            document.getElementById('total-units').innerText = data.length;
+            document.getElementById('total-cities').innerText = new Set(data.map(d => d.Cidade)).size;
+        }
+
+        // --- SISTEMA DE DETALHES COM CONTAGEM ---
+        function openDetails() {
+            document.getElementById('details-modal').classList.remove('hidden');
+            document.getElementById('details-modal').classList.add('flex');
+            refreshDropdowns('init');
+            buildDetailsTable();
+        }
+
+        function closeDetails() {
+            document.getElementById('details-modal').classList.add('hidden');
+            document.getElementById('details-modal').classList.remove('flex');
+        }
+
+        function getFilteredDataForModal() {
+            let data = selectedFilters.size > 0 ? allData.filter(d => selectedFilters.has(d.tipo)) : allData;
+            return data.filter(d => 
+                (!detailFilters.uf || d.UF === detailFilters.uf) &&
+                (!detailFilters.cidade || d.Cidade === detailFilters.cidade) &&
+                (!detailFilters.bairro || (d.Bairro || 'nenhum') === detailFilters.bairro) &&
+                (!detailFilters.tipo || d.tipo === detailFilters.tipo)
+            );
+        }
+
+        function filterChanged(changedField) {
+            detailFilters[changedField] = document.getElementById(`f-${changedField}`).value;
+            if (changedField === 'uf') {
+                detailFilters.cidade = ''; detailFilters.bairro = '';
+                document.getElementById('f-cidade').value = ''; document.getElementById('f-bairro').value = '';
+            } else if (changedField === 'cidade') {
+                detailFilters.bairro = ''; document.getElementById('f-bairro').value = '';
+            }
+            refreshDropdowns(changedField);
+            buildDetailsTable();
+        }
+
+        function refreshDropdowns(source) {
+            const mapData = selectedFilters.size > 0 ? allData.filter(d => selectedFilters.has(d.tipo)) : allData;
+            if (source === 'init') {
+                const ufs = new Set(mapData.map(d => d.UF));
+                fillSelect('f-uf', ufs, 'UF', detailFilters.uf);
+            }
+            if (source === 'init' || source === 'uf') {
+                const citiesData = detailFilters.uf ? mapData.filter(d => d.UF === detailFilters.uf) : mapData;
+                const cidades = new Set(citiesData.map(d => d.Cidade));
+                fillSelect('f-cidade', cidades, 'Cidade', detailFilters.cidade);
+            }
+            if (source === 'init' || source === 'uf' || source === 'cidade') {
+                let bairrosData = mapData;
+                if (detailFilters.uf) bairrosData = bairrosData.filter(d => d.UF === detailFilters.uf);
+                if (detailFilters.cidade) bairrosData = bairrosData.filter(d => d.Cidade === detailFilters.cidade);
+                const bairros = new Set(bairrosData.map(d => d.Bairro || 'nenhum'));
+                fillSelect('f-bairro', bairros, 'Bairro', detailFilters.bairro);
+            }
+            let tiposData = getFilteredDataForModal();
+            if(detailFilters.uf) tiposData = mapData.filter(d => d.UF === detailFilters.uf);
+            const availableTypes = new Set(tiposData.map(d => d.tipo));
+            fillSelect('f-tipo', availableTypes, 'Tipo', detailFilters.tipo);
+        }
+
+        function fillSelect(id, values, placeholder, currentValue) {
+            const select = document.getElementById(id);
+            select.innerHTML = `<option value="">${placeholder}</option>`;
+            Array.from(values).sort().forEach(v => {
+                if(v){ const opt = document.createElement('option'); opt.value = v; opt.textContent = v; select.appendChild(opt); }
+            });
+            select.value = Array.from(values).includes(currentValue) ? currentValue : "";
+        }
+
+        function buildDetailsTable() {
+            const tbody = document.getElementById('details-body');
+            tbody.innerHTML = '';
+            
+            const data = getFilteredDataForModal();
+
+            // 1. Calcula contagem global dos tipos filtrados
+            const globalCounts = {};
+            data.forEach(d => globalCounts[d.tipo] = (globalCounts[d.tipo] || 0) + 1);
+            
+            // Renderiza o resumo no header
+            const globalSummary = Object.entries(globalCounts).map(([t, c]) => `${t}: ${c}`).join(', ');
+            document.getElementById('modal-total-counter').innerHTML = `
+                <span class="font-bold text-slate-700">Total: ${data.length}</span> 
+                <span class="text-slate-400 text-[10px] ml-2 border-l pl-2">${globalSummary || 'Nenhum dado'}</span>`;
+
+            // 2. Agrupa por Local para a Tabela
+            const grouped = {};
+            data.forEach(item => {
+                const key = `${item.UF}|${item.Cidade}|${item.Bairro || 'nenhum'}`;
+                if (!grouped[key]) {
+                    // Nota: 'tipos' agora é um Objeto para contar { 'Drogaria': 2, 'Posto': 1 }
+                    grouped[key] = { uf: item.UF, cidade: item.Cidade, bairro: item.Bairro || 'nenhum', total: 0, tipos: {} };
+                }
+                grouped[key].total++;
+                grouped[key].tipos[item.tipo] = (grouped[key].tipos[item.tipo] || 0) + 1;
+            });
+
+            // 3. Renderiza Linhas
+            Object.values(grouped).sort((a,b) => a.uf.localeCompare(b.uf)).forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b hover:bg-slate-50 transition align-top';
+                
+                // Formata os tipos como etiquetas: "Drogaria: 2"
+                const tiposFormatados = Object.entries(r.tipos)
+                    .map(([t, c]) => `<span class="inline-block bg-slate-100 text-slate-600 px-2 py-0.5 rounded mr-1 mb-1 border border-slate-200 text-[10px]">${t}: <b>${c}</b></span>`)
+                    .join(' ');
+
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-slate-700">${r.uf}</td>
+                    <td class="p-3 text-slate-600">${r.cidade}</td>
+                    <td class="p-3 text-slate-400">${r.bairro}</td>
+                    <td class="p-3 text-center font-black text-blue-600 text-lg">${r.total}</td>
+                    <td class="p-3 text-slate-500">${tiposFormatados}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function resetDetailFilters() {
+            detailFilters = { uf: '', cidade: '', bairro: '', tipo: '' };
+            ['f-uf','f-cidade','f-bairro','f-tipo'].forEach(id => document.getElementById(id).value = '');
+            refreshDropdowns('init');
+            buildDetailsTable();
+        }
+
+        // --- Upload / Export ---
+        document.getElementById('fileUpload').addEventListener('change', (e) => {
+            const reader = new FileReader();
+            document.getElementById('loading-indicator').classList.remove('hidden');
+            reader.onload = async (e) => {
+                const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                allData = []; markersLayer.clearLayers();
+                for (let i = 0; i < json.length; i++) {
+                    const r = json[i];
+                    try {
+                        await new Promise(res => setTimeout(res, 600)); 
+                        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(r.Logradouro + ',' + r.Cidade + ',' + r.UF)}&limit=1`);
+                        const geo = await res.json();
+                        if (geo.length > 0) {
+                            allData.push({ ...r, lat: geo[0].lat, lng: geo[0].lon, tipo: (r.Tipo || 'Outro').trim() });
+                        }
+                    } catch (err) { console.error("Erro geocodificação"); }
+                    document.getElementById('progress-text').innerText = Math.round(((i+1)/json.length)*100) + '%';
+                }
+                document.getElementById('loading-indicator').classList.add('hidden');
+                updateMap();
+                initUI();
+            };
+            reader.readAsArrayBuffer(e.target.files[0]);
+        });
+
+        function uploadPhoto(event, key) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => { categoryPhotos[key] = e.target.result; initUI(); updateMap(); };
+            reader.readAsDataURL(file);
+        }
+
+        async function exportToPDF() {
+            document.body.classList.add('pdf-mode');
+            const { jsPDF } = window.jspdf;
+            const canvas = await html2canvas(document.body, { useCORS: true, scale: 2 });
+            const pdf = new jsPDF('l', 'mm', 'a4');
+            const imgProps = pdf.getImageProperties(canvas.toDataURL('image/png'));
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save('Relatorio_GeoFiliais.pdf');
+            document.body.classList.remove('pdf-mode');
+        }
+
+        initUI();
+    </script>
+</body>
+</html>
