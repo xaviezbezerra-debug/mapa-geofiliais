@@ -3,17 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeoFiliais - Detalhes Pro (Com Memória)</title>
+    <title>GeoFiliais - Cloud</title>
     
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://www.gstatic.com">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; overflow: hidden; }
@@ -61,19 +66,19 @@
                 <div class="flex justify-between items-center">
                     <h2 class="text-xs font-black text-slate-700 uppercase tracking-widest">Detalhamento Geo-Estatístico</h2>
                     <div id="modal-total-counter" class="text-[10px] text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                        Carregando...
+                        Carregando Cloud...
                     </div>
                 </div>
-                <button onclick="closeDetails()" class="absolute top-3 right-4 w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-slate-100 transition">
+                <button onclick="window.closeDetails()" class="absolute top-3 right-4 w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-slate-100 transition">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
                 
                 <div class="flex flex-wrap gap-3 mt-1 bg-slate-50 p-2 rounded-lg text-[10px]">
-                    <select id="f-uf" onchange="filterChanged('uf')" class="px-2 py-1 rounded border border-slate-200 outline-none hover:border-blue-300 transition cursor-pointer min-w-[60px]"><option value="">UF</option></select>
-                    <select id="f-cidade" onchange="filterChanged('cidade')" class="px-2 py-1 rounded border border-slate-200 outline-none hover:border-blue-300 transition cursor-pointer min-w-[120px]"><option value="">Cidade</option></select>
-                    <select id="f-bairro" onchange="filterChanged('bairro')" class="px-2 py-1 rounded border border-slate-200 outline-none hover:border-blue-300 transition cursor-pointer min-w-[120px]"><option value="">Bairro</option></select>
-                    <select id="f-tipo" onchange="filterChanged('tipo')" class="px-2 py-1 rounded border border-slate-200 outline-none hover:border-blue-300 transition cursor-pointer min-w-[100px]"><option value="">Tipo</option></select>
-                    <button onclick="resetDetailFilters()" class="ml-auto px-3 py-1 rounded bg-white border text-slate-400 hover:text-red-500 transition">Limpar Filtros</button>
+                    <select id="f-uf" onchange="window.filterChanged('uf')" class="px-2 py-1 rounded border border-slate-200 outline-none hover:border-blue-300 transition cursor-pointer min-w-[60px]"><option value="">UF</option></select>
+                    <select id="f-cidade" onchange="window.filterChanged('cidade')" class="px-2 py-1 rounded border border-slate-200 outline-none hover:border-blue-300 transition cursor-pointer min-w-[120px]"><option value="">Cidade</option></select>
+                    <select id="f-bairro" onchange="window.filterChanged('bairro')" class="px-2 py-1 rounded border border-slate-200 outline-none hover:border-blue-300 transition cursor-pointer min-w-[120px]"><option value="">Bairro</option></select>
+                    <select id="f-tipo" onchange="window.filterChanged('tipo')" class="px-2 py-1 rounded border border-slate-200 outline-none hover:border-blue-300 transition cursor-pointer min-w-[100px]"><option value="">Tipo</option></select>
+                    <button onclick="window.resetDetailFilters()" class="ml-auto px-3 py-1 rounded bg-white border text-slate-400 hover:text-red-500 transition">Limpar Filtros</button>
                 </div>
             </div>
 
@@ -94,29 +99,29 @@
         </div>
     </div>
 
-    <button onclick="toggleSidebar()" id="btn-show" class="fixed top-28 left-6 z-20 w-10 h-10 glass-panel rounded-full flex items-center justify-center text-slate-600 hover:text-blue-600 transition-all pointer-events-auto opacity-0 scale-0">
+    <button onclick="window.toggleSidebar()" id="btn-show" class="fixed top-28 left-6 z-20 w-10 h-10 glass-panel rounded-full flex items-center justify-center text-slate-600 hover:text-blue-600 transition-all pointer-events-auto opacity-0 scale-0">
         <i class="fa-solid fa-bars"></i>
     </button>
 
     <div id="main-content" class="relative z-10 h-screen flex flex-col p-6 pointer-events-none">
         <header class="glass-panel rounded-3xl p-4 mb-6 flex justify-between items-center pointer-events-auto max-w-5xl mx-auto w-full">
             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center shadow-xl">
-                    <i class="fa-solid fa-map-location-dot text-white text-xl"></i>
+                <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-xl">
+                    <i class="fa-solid fa-cloud text-white text-xl"></i>
                 </div>
                 <div>
                     <h1 class="text-lg font-black text-slate-800 leading-none">Frente de Caixa</h1>
-                    <span class="text-[10px] text-blue-600 font-bold uppercase tracking-widest">Análise Geográfica</span>
+                    <span id="sync-status" class="text-[10px] text-blue-600 font-bold uppercase tracking-widest">Conectando ao Firebase...</span>
                 </div>
             </div>
 
             <div class="flex items-center gap-3">
                 <div id="loading-indicator" class="hidden flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm">
-                    <div class="w-2 h-2 bg-blue-600 rounded-full animate-ping"></div>
+                    <div class="w-2 h-2 bg-indigo-600 rounded-full animate-ping"></div>
                     <span id="progress-text" class="text-xs font-bold text-slate-600">0%</span>
                 </div>
                 
-                <button onclick="openDetails()" title="Ver tabela detalhada" class="w-10 h-10 rounded-full flex items-center justify-center bg-white/70 hover:bg-white text-slate-500 hover:text-blue-600 border border-slate-200 transition-all">
+                <button onclick="window.openDetails()" title="Ver tabela detalhada" class="w-10 h-10 rounded-full flex items-center justify-center bg-white/70 hover:bg-white text-slate-500 hover:text-blue-600 border border-slate-200 transition-all">
                     <i class="fa-solid fa-table-list text-sm"></i>
                 </button>
                 <label title="Importar Excel" class="cursor-pointer w-10 h-10 rounded-full flex items-center justify-center bg-white/70 hover:bg-white text-slate-500 hover:text-green-600 border border-slate-200 shadow-sm transition-all">
@@ -130,13 +135,13 @@
             <aside id="sidebar" class="glass-panel w-72 rounded-[32px] p-5 flex flex-col pointer-events-auto">
                 <div class="flex items-center justify-between mb-4 border-b pb-2">
                     <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Filtros por Tipo</h3>
-                    <button onclick="toggleSidebar()" class="text-slate-400 hover:text-red-500 transition-colors">
+                    <button onclick="window.toggleSidebar()" class="text-slate-400 hover:text-red-500 transition-colors">
                         <i class="fa-solid fa-circle-xmark"></i>
                     </button>
                 </div>
                 <div class="flex-1 overflow-y-auto space-y-1 pr-2 scrollbar-thin scrollbar-thumb-slate-200" id="filter-container"></div>
                 <div class="mt-4 pt-4 border-t opacity-40 hover:opacity-100 transition-opacity">
-                    <button onclick="exportToPDF()" class="w-full text-[8px] font-bold text-slate-500 flex items-center justify-center gap-2 uppercase tracking-widest">
+                    <button onclick="window.exportToPDF()" class="w-full text-[8px] font-bold text-slate-500 flex items-center justify-center gap-2 uppercase tracking-widest">
                         <i class="fa-solid fa-file-pdf"></i> Gerar PDF
                     </button>
                 </div>
@@ -150,14 +155,32 @@
                     </div>
                     <div class="flex justify-between items-end border-t pt-2 border-slate-100">
                         <span class="text-[10px] font-bold text-slate-400 uppercase">Cidades</span>
-                        <span id="total-cities" class="text-2xl font-black text-blue-600">0</span>
+                        <span id="total-cities" class="text-2xl font-black text-indigo-600">0</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, setDoc, doc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // --- SUAS CREDENCIAIS ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDUx8TetIv1sqRxLNYjawbLqaCWc-YBVvM",
+            authDomain: "geofiliais.firebaseapp.com",
+            projectId: "geofiliais",
+            storageBucket: "geofiliais.firebasestorage.app",
+            messagingSenderId: "875507907871",
+            appId: "1:875507907871:web:02176f2c3969e63785c42a"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const LOCATIONS_COLLECTION = "unidades";
+
+        // Variáveis Globais
         const CATEGORIES = {
             'Bairro':     { color: '#10b981', icon: 'fa-basket-shopping' },
             'Drogaria':   { color: '#3b82f6', icon: 'fa-pills' },
@@ -173,41 +196,78 @@
         let selectedFilters = new Set();
         let categoryPhotos = {};
         let detailFilters = { uf: '', cidade: '', bairro: '', tipo: '' };
+        let map;
+        let markersLayer;
 
-        const map = L.map('map-container', { zoomControl: false, minZoom: 4 }).setView([-14.2350, -51.9253], 4);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
-        let markersLayer = L.layerGroup().addTo(map);
-
-        // --- SISTEMA DE PERSISTÊNCIA (MEMÓRIA) ---
-        function saveDataToLocal() {
-            try {
-                localStorage.setItem('geo_data', JSON.stringify(allData));
-                localStorage.setItem('geo_photos', JSON.stringify(categoryPhotos));
-                console.log("Dados salvos no navegador!");
-            } catch (e) {
-                console.error("Erro ao salvar (limite excedido?):", e);
-                // Em caso de erro silencioso, apenas logamos no console para não assustar o usuário
-            }
+        function initMap() {
+            map = L.map('map-container', { zoomControl: false, minZoom: 4 }).setView([-14.2350, -51.9253], 4);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+            markersLayer = L.layerGroup().addTo(map);
         }
 
-        function loadDataFromLocal() {
-            const storedData = localStorage.getItem('geo_data');
-            const storedPhotos = localStorage.getItem('geo_photos');
-
-            if (storedPhotos) {
-                categoryPhotos = JSON.parse(storedPhotos);
-            }
-
-            if (storedData) {
-                allData = JSON.parse(storedData);
-                console.log("Dados carregados da memória:", allData.length);
+        // --- FUNÇÕES FIREBASE ---
+        async function loadFromFirebase() {
+            const statusEl = document.getElementById('sync-status');
+            statusEl.innerText = "Carregando Cloud...";
+            statusEl.className = "text-[10px] text-orange-500 font-bold uppercase tracking-widest";
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, LOCATIONS_COLLECTION));
+                allData = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    allData.push(data);
+                    if(data.customPhoto && data.tipo) categoryPhotos[data.tipo] = data.customPhoto;
+                });
+                
                 updateMap();
                 initUI();
+                
+                statusEl.innerText = "Online • Sincronizado";
+                statusEl.className = "text-[10px] text-green-600 font-bold uppercase tracking-widest";
+            } catch (error) {
+                console.error(error);
+                statusEl.innerText = "Erro de Conexão";
+                statusEl.className = "text-[10px] text-red-600 font-bold uppercase tracking-widest";
             }
         }
 
-        // --- Funções de UI ---
-        function toggleSidebar() {
+        async function saveUnitToFirebase(unitData) {
+            try {
+                // Cria ID único baseado no endereço
+                const docId = `${unitData.Logradouro}-${unitData.Cidade}-${unitData.tipo}`.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+                await setDoc(doc(db, LOCATIONS_COLLECTION, docId), unitData);
+            } catch (e) { console.error(e); }
+        }
+
+        async function savePhotoToFirebase(tipo, base64) {
+            const statusEl = document.getElementById('sync-status');
+            statusEl.innerText = "Salvando Foto...";
+            
+            categoryPhotos[tipo] = base64;
+            
+            // Atualiza todas as unidades desse tipo com a nova foto
+            const batch = writeBatch(db);
+            let count = 0;
+            allData.forEach(d => {
+                if (d.tipo === tipo) {
+                    d.customPhoto = base64;
+                    const docId = `${d.Logradouro}-${d.Cidade}-${d.tipo}`.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+                    batch.update(doc(db, LOCATIONS_COLLECTION, docId), { customPhoto: base64 });
+                    count++;
+                }
+            });
+            if(count > 0) await batch.commit();
+            
+            statusEl.innerText = "Online • Sincronizado";
+            updateMap();
+            initUI();
+        }
+
+        // --- UI & MAPA (Adaptado para module) ---
+        
+        // Funções globais para botões HTML
+        window.toggleSidebar = function() {
             const sidebar = document.getElementById('sidebar');
             const btn = document.getElementById('btn-show');
             sidebar.classList.toggle('sidebar-hidden');
@@ -218,37 +278,35 @@
 
         function initUI() {
             const container = document.getElementById('filter-container');
-            container.innerHTML = `<button onclick="resetFilters()" class="w-full text-center py-1 rounded-lg hover:bg-white text-[9px] font-bold text-slate-400 hover:text-blue-600 transition mb-2 uppercase">Limpar Filtros</button>`;
+            container.innerHTML = `<button onclick="window.resetFilters()" class="w-full text-center py-1 rounded-lg hover:bg-white text-[9px] font-bold text-slate-400 hover:text-blue-600 transition mb-2 uppercase">Limpar Filtros</button>`;
             Object.keys(CATEGORIES).forEach(key => {
                 const config = CATEGORIES[key];
                 const count = allData.filter(d => d.tipo === key).length;
                 const isActive = selectedFilters.has(key);
                 const item = document.createElement('div');
                 item.className = `category-item flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer border border-transparent hover:bg-white group ${isActive ? 'active shadow-sm' : ''}`;
-                item.onclick = (e) => { if(e.target.tagName !== 'INPUT') toggleFilter(key); };
+                item.onclick = (e) => { if(e.target.tagName !== 'INPUT') window.toggleFilter(key); };
                 item.innerHTML = `
                     <div class="preview-container shrink-0">
                         ${categoryPhotos[key] ? `<img src="${categoryPhotos[key]}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50"><i class="fa-solid ${config.icon} text-[10px]"></i></div>`}
                     </div>
-                    <div class="flex-1">
-                        <p class="text-[11px] font-semibold text-slate-600">${key}</p>
-                    </div>
+                    <div class="flex-1"><p class="text-[11px] font-semibold text-slate-600">${key}</p></div>
                     <span class="text-[9px] font-bold bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded-md">${count}</span>
                     <label class="opacity-0 group-hover:opacity-100 cursor-pointer p-1 text-slate-300 hover:text-blue-500 transition-all">
                         <i class="fa-solid fa-camera text-[9px]"></i>
-                        <input type="file" class="hidden" onchange="uploadPhoto(event, '${key}')" accept="image/*">
+                        <input type="file" class="hidden" onchange="window.uploadPhoto(event, '${key}')" accept="image/*">
                     </label>`;
                 container.appendChild(item);
             });
         }
 
-        function toggleFilter(type) {
+        window.toggleFilter = function(type) {
             selectedFilters.has(type) ? selectedFilters.delete(type) : selectedFilters.add(type);
             updateMap();
             initUI();
         }
 
-        function resetFilters() {
+        window.resetFilters = function() {
             selectedFilters.clear();
             updateMap();
             initUI();
@@ -257,18 +315,21 @@
         function updateMap() {
             markersLayer.clearLayers();
             const filtered = selectedFilters.size === 0 ? allData : allData.filter(d => selectedFilters.has(d.tipo));
-            filtered.forEach(createMarker);
+            const markers = [];
+            filtered.forEach(item => { if(item.lat && item.lng) markers.push(createMarker(item)); });
+            if(markers.length > 0) L.featureGroup(markers).addTo(markersLayer);
             updateStats(filtered);
-            if(filtered.length > 0) map.fitBounds(L.featureGroup(markersLayer.getLayers()).getBounds().pad(0.1));
+            if(filtered.length > 0) { try { map.fitBounds(L.featureGroup(markers).getBounds().pad(0.1)); } catch(e){} }
         }
 
         function createMarker(item) {
             const config = CATEGORIES[item.tipo] || { color: '#94a3b8', icon: 'fa-location-dot' };
-            const photo = categoryPhotos[item.tipo];
+            const photo = item.customPhoto || categoryPhotos[item.tipo];
             const html = photo 
                 ? `<div class="photo-pin" style="width: 44px; height: 44px; background-image: url('${photo}')"></div>`
                 : `<div class="photo-pin flex items-center justify-center text-white" style="width: 32px; height: 32px; background-color: ${config.color}"><i class="fa-solid ${config.icon} text-xs"></i></div>`;
             const icon = L.divIcon({ className: '', html, iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -15] });
+            
             const popupHtml = `
                 <div class="flex flex-col w-full h-full bg-white">
                     ${photo ? 
@@ -288,7 +349,7 @@
                         </div>
                     </div>
                 </div>`;
-            L.marker([item.lat, item.lng], { icon }).addTo(markersLayer).bindPopup(popupHtml);
+            return L.marker([item.lat, item.lng], { icon }).bindPopup(popupHtml);
         }
 
         function updateStats(data) {
@@ -296,30 +357,81 @@
             document.getElementById('total-cities').innerText = new Set(data.map(d => d.Cidade)).size;
         }
 
-        // --- SISTEMA DE DETALHES COM CONTAGEM ---
-        function openDetails() {
+        // --- UPLOAD EXCEL ---
+        document.getElementById('fileUpload').addEventListener('change', (e) => {
+            const reader = new FileReader();
+            document.getElementById('loading-indicator').classList.remove('hidden');
+            document.getElementById('sync-status').innerText = "Processando...";
+            
+            reader.onload = async (e) => {
+                const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                
+                let processedCount = 0;
+                for (let i = 0; i < json.length; i++) {
+                    const r = json[i];
+                    
+                    // Verifica duplicata local antes de chamar API
+                    const existing = allData.find(d => d.Logradouro === r.Logradouro && d.Cidade === r.Cidade && d.tipo === r.Tipo);
+                    let lat, lng;
+
+                    if (existing && existing.lat) {
+                        lat = existing.lat;
+                        lng = existing.lng;
+                    } else {
+                        // GeoCode API
+                        try {
+                            await new Promise(res => setTimeout(res, 600)); 
+                            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(r.Logradouro + ',' + r.Cidade + ',' + r.UF)}&limit=1`);
+                            const geo = await res.json();
+                            if (geo.length > 0) { lat = geo[0].lat; lng = geo[0].lon; }
+                        } catch (err) { console.error("Erro geo"); }
+                    }
+
+                    if (lat && lng) {
+                        const newItem = { 
+                            ...r, lat, lng, 
+                            tipo: (r.Tipo || 'Outro').trim(),
+                            customPhoto: categoryPhotos[(r.Tipo || 'Outro').trim()] || null
+                        };
+                        
+                        await saveUnitToFirebase(newItem);
+                        
+                        const idx = allData.findIndex(d => d.Logradouro === newItem.Logradouro && d.Cidade === newItem.Cidade);
+                        if(idx >= 0) allData[idx] = newItem; else allData.push(newItem);
+                    }
+                    processedCount++;
+                    document.getElementById('progress-text').innerText = Math.round((processedCount/json.length)*100) + '%';
+                }
+                document.getElementById('loading-indicator').classList.add('hidden');
+                document.getElementById('sync-status').innerText = "Sincronizado";
+                updateMap();
+                initUI();
+            };
+            reader.readAsArrayBuffer(e.target.files[0]);
+        });
+
+        window.uploadPhoto = function(event, key) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => { savePhotoToFirebase(key, e.target.result); };
+            reader.readAsDataURL(file);
+        }
+        
+        // --- DETALHES MODAL ---
+        window.openDetails = function() {
             document.getElementById('details-modal').classList.remove('hidden');
             document.getElementById('details-modal').classList.add('flex');
             refreshDropdowns('init');
             buildDetailsTable();
         }
 
-        function closeDetails() {
+        window.closeDetails = function() {
             document.getElementById('details-modal').classList.add('hidden');
             document.getElementById('details-modal').classList.remove('flex');
         }
 
-        function getFilteredDataForModal() {
-            let data = selectedFilters.size > 0 ? allData.filter(d => selectedFilters.has(d.tipo)) : allData;
-            return data.filter(d => 
-                (!detailFilters.uf || d.UF === detailFilters.uf) &&
-                (!detailFilters.cidade || d.Cidade === detailFilters.cidade) &&
-                (!detailFilters.bairro || (d.Bairro || 'nenhum') === detailFilters.bairro) &&
-                (!detailFilters.tipo || d.tipo === detailFilters.tipo)
-            );
-        }
-
-        function filterChanged(changedField) {
+        window.filterChanged = function(changedField) {
             detailFilters[changedField] = document.getElementById(`f-${changedField}`).value;
             if (changedField === 'uf') {
                 detailFilters.cidade = ''; detailFilters.bairro = '';
@@ -329,6 +441,23 @@
             }
             refreshDropdowns(changedField);
             buildDetailsTable();
+        }
+
+        window.resetDetailFilters = function() {
+            detailFilters = { uf: '', cidade: '', bairro: '', tipo: '' };
+            ['f-uf','f-cidade','f-bairro','f-tipo'].forEach(id => document.getElementById(id).value = '');
+            refreshDropdowns('init');
+            buildDetailsTable();
+        }
+        
+        function getFilteredDataForModal() {
+            let data = selectedFilters.size > 0 ? allData.filter(d => selectedFilters.has(d.tipo)) : allData;
+            return data.filter(d => 
+                (!detailFilters.uf || d.UF === detailFilters.uf) &&
+                (!detailFilters.cidade || d.Cidade === detailFilters.cidade) &&
+                (!detailFilters.bairro || (d.Bairro || 'nenhum') === detailFilters.bairro) &&
+                (!detailFilters.tipo || d.tipo === detailFilters.tipo)
+            );
         }
 
         function refreshDropdowns(source) {
@@ -367,16 +496,11 @@
         function buildDetailsTable() {
             const tbody = document.getElementById('details-body');
             tbody.innerHTML = '';
-            
             const data = getFilteredDataForModal();
-
             const globalCounts = {};
             data.forEach(d => globalCounts[d.tipo] = (globalCounts[d.tipo] || 0) + 1);
-            
             const globalSummary = Object.entries(globalCounts).map(([t, c]) => `${t}: ${c}`).join(', ');
-            document.getElementById('modal-total-counter').innerHTML = `
-                <span class="font-bold text-slate-700">Total: ${data.length}</span> 
-                <span class="text-slate-400 text-[10px] ml-2 border-l pl-2">${globalSummary || 'Nenhum dado'}</span>`;
+            document.getElementById('modal-total-counter').innerHTML = `<span class="font-bold text-slate-700">Total: ${data.length}</span><span class="text-slate-400 text-[10px] ml-2 border-l pl-2">${globalSummary || 'Nenhum dado'}</span>`;
 
             const grouped = {};
             data.forEach(item => {
@@ -391,77 +515,13 @@
             Object.values(grouped).sort((a,b) => a.uf.localeCompare(b.uf)).forEach(r => {
                 const tr = document.createElement('tr');
                 tr.className = 'border-b hover:bg-slate-50 transition align-top';
-                
-                const tiposFormatados = Object.entries(r.tipos)
-                    .map(([t, c]) => `<span class="inline-block bg-slate-100 text-slate-600 px-2 py-0.5 rounded mr-1 mb-1 border border-slate-200 text-[10px]">${t}: <b>${c}</b></span>`)
-                    .join(' ');
-
-                tr.innerHTML = `
-                    <td class="p-3 font-bold text-slate-700">${r.uf}</td>
-                    <td class="p-3 text-slate-600">${r.cidade}</td>
-                    <td class="p-3 text-slate-400">${r.bairro}</td>
-                    <td class="p-3 text-center font-black text-blue-600 text-lg">${r.total}</td>
-                    <td class="p-3 text-slate-500">${tiposFormatados}</td>`;
+                const tiposFormatados = Object.entries(r.tipos).map(([t, c]) => `<span class="inline-block bg-slate-100 text-slate-600 px-2 py-0.5 rounded mr-1 mb-1 border border-slate-200 text-[10px]">${t}: <b>${c}</b></span>`).join(' ');
+                tr.innerHTML = `<td class="p-3 font-bold text-slate-700">${r.uf}</td><td class="p-3 text-slate-600">${r.cidade}</td><td class="p-3 text-slate-400">${r.bairro}</td><td class="p-3 text-center font-black text-blue-600 text-lg">${r.total}</td><td class="p-3 text-slate-500">${tiposFormatados}</td>`;
                 tbody.appendChild(tr);
             });
         }
 
-        function resetDetailFilters() {
-            detailFilters = { uf: '', cidade: '', bairro: '', tipo: '' };
-            ['f-uf','f-cidade','f-bairro','f-tipo'].forEach(id => document.getElementById(id).value = '');
-            refreshDropdowns('init');
-            buildDetailsTable();
-        }
-
-        // --- Upload / Export ---
-        document.getElementById('fileUpload').addEventListener('change', (e) => {
-            const reader = new FileReader();
-            document.getElementById('loading-indicator').classList.remove('hidden');
-            reader.onload = async (e) => {
-                const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
-                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                allData = []; markersLayer.clearLayers();
-                
-                // Processamento...
-                for (let i = 0; i < json.length; i++) {
-                    const r = json[i];
-                    try {
-                        await new Promise(res => setTimeout(res, 600)); 
-                        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(r.Logradouro + ',' + r.Cidade + ',' + r.UF)}&limit=1`);
-                        const geo = await res.json();
-                        if (geo.length > 0) {
-                            allData.push({ ...r, lat: geo[0].lat, lng: geo[0].lon, tipo: (r.Tipo || 'Outro').trim() });
-                        }
-                    } catch (err) { console.error("Erro geocodificação"); }
-                    document.getElementById('progress-text').innerText = Math.round(((i+1)/json.length)*100) + '%';
-                }
-                
-                // SALVA TUDO NO FINAL DO PROCESSO
-                saveDataToLocal();
-                
-                document.getElementById('loading-indicator').classList.add('hidden');
-                updateMap();
-                initUI();
-            };
-            reader.readAsArrayBuffer(e.target.files[0]);
-        });
-
-        function uploadPhoto(event, key) {
-            const file = event.target.files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => { 
-                categoryPhotos[key] = e.target.result; 
-                
-                // SALVA FOTOS ASSIM QUE UPLOAD TERMINA
-                saveDataToLocal();
-                
-                initUI(); 
-                updateMap(); 
-            };
-            reader.readAsDataURL(file);
-        }
-
-        async function exportToPDF() {
+        window.exportToPDF = async function() {
             document.body.classList.add('pdf-mode');
             const { jsPDF } = window.jspdf;
             const canvas = await html2canvas(document.body, { useCORS: true, scale: 2 });
@@ -470,13 +530,13 @@
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
             pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save('Relatorio_GeoFiliais.pdf');
+            pdf.save('Relatorio_GeoFiliais_Cloud.pdf');
             document.body.classList.remove('pdf-mode');
         }
 
-        // TENTA CARREGAR DADOS SALVOS AO INICIAR
-        loadDataFromLocal();
-        initUI();
+        initMap();
+        loadFromFirebase();
     </script>
 </body>
 </html>
+
