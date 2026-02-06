@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeoFiliais - Detalhes Pro</title>
+    <title>GeoFiliais - Detalhes Pro (Com Memória)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -115,6 +115,7 @@
                     <div class="w-2 h-2 bg-blue-600 rounded-full animate-ping"></div>
                     <span id="progress-text" class="text-xs font-bold text-slate-600">0%</span>
                 </div>
+                
                 <button onclick="openDetails()" title="Ver tabela detalhada" class="w-10 h-10 rounded-full flex items-center justify-center bg-white/70 hover:bg-white text-slate-500 hover:text-blue-600 border border-slate-200 transition-all">
                     <i class="fa-solid fa-table-list text-sm"></i>
                 </button>
@@ -177,6 +178,35 @@
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
         let markersLayer = L.layerGroup().addTo(map);
 
+        // --- SISTEMA DE PERSISTÊNCIA (MEMÓRIA) ---
+        function saveDataToLocal() {
+            try {
+                localStorage.setItem('geo_data', JSON.stringify(allData));
+                localStorage.setItem('geo_photos', JSON.stringify(categoryPhotos));
+                console.log("Dados salvos no navegador!");
+            } catch (e) {
+                console.error("Erro ao salvar (limite excedido?):", e);
+                // Em caso de erro silencioso, apenas logamos no console para não assustar o usuário
+            }
+        }
+
+        function loadDataFromLocal() {
+            const storedData = localStorage.getItem('geo_data');
+            const storedPhotos = localStorage.getItem('geo_photos');
+
+            if (storedPhotos) {
+                categoryPhotos = JSON.parse(storedPhotos);
+            }
+
+            if (storedData) {
+                allData = JSON.parse(storedData);
+                console.log("Dados carregados da memória:", allData.length);
+                updateMap();
+                initUI();
+            }
+        }
+
+        // --- Funções de UI ---
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const btn = document.getElementById('btn-show');
@@ -340,34 +370,28 @@
             
             const data = getFilteredDataForModal();
 
-            // 1. Calcula contagem global dos tipos filtrados
             const globalCounts = {};
             data.forEach(d => globalCounts[d.tipo] = (globalCounts[d.tipo] || 0) + 1);
             
-            // Renderiza o resumo no header
             const globalSummary = Object.entries(globalCounts).map(([t, c]) => `${t}: ${c}`).join(', ');
             document.getElementById('modal-total-counter').innerHTML = `
                 <span class="font-bold text-slate-700">Total: ${data.length}</span> 
                 <span class="text-slate-400 text-[10px] ml-2 border-l pl-2">${globalSummary || 'Nenhum dado'}</span>`;
 
-            // 2. Agrupa por Local para a Tabela
             const grouped = {};
             data.forEach(item => {
                 const key = `${item.UF}|${item.Cidade}|${item.Bairro || 'nenhum'}`;
                 if (!grouped[key]) {
-                    // Nota: 'tipos' agora é um Objeto para contar { 'Drogaria': 2, 'Posto': 1 }
                     grouped[key] = { uf: item.UF, cidade: item.Cidade, bairro: item.Bairro || 'nenhum', total: 0, tipos: {} };
                 }
                 grouped[key].total++;
                 grouped[key].tipos[item.tipo] = (grouped[key].tipos[item.tipo] || 0) + 1;
             });
 
-            // 3. Renderiza Linhas
             Object.values(grouped).sort((a,b) => a.uf.localeCompare(b.uf)).forEach(r => {
                 const tr = document.createElement('tr');
                 tr.className = 'border-b hover:bg-slate-50 transition align-top';
                 
-                // Formata os tipos como etiquetas: "Drogaria: 2"
                 const tiposFormatados = Object.entries(r.tipos)
                     .map(([t, c]) => `<span class="inline-block bg-slate-100 text-slate-600 px-2 py-0.5 rounded mr-1 mb-1 border border-slate-200 text-[10px]">${t}: <b>${c}</b></span>`)
                     .join(' ');
@@ -397,6 +421,8 @@
                 const workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
                 const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 allData = []; markersLayer.clearLayers();
+                
+                // Processamento...
                 for (let i = 0; i < json.length; i++) {
                     const r = json[i];
                     try {
@@ -409,6 +435,10 @@
                     } catch (err) { console.error("Erro geocodificação"); }
                     document.getElementById('progress-text').innerText = Math.round(((i+1)/json.length)*100) + '%';
                 }
+                
+                // SALVA TUDO NO FINAL DO PROCESSO
+                saveDataToLocal();
+                
                 document.getElementById('loading-indicator').classList.add('hidden');
                 updateMap();
                 initUI();
@@ -419,7 +449,15 @@
         function uploadPhoto(event, key) {
             const file = event.target.files[0];
             const reader = new FileReader();
-            reader.onload = (e) => { categoryPhotos[key] = e.target.result; initUI(); updateMap(); };
+            reader.onload = (e) => { 
+                categoryPhotos[key] = e.target.result; 
+                
+                // SALVA FOTOS ASSIM QUE UPLOAD TERMINA
+                saveDataToLocal();
+                
+                initUI(); 
+                updateMap(); 
+            };
             reader.readAsDataURL(file);
         }
 
@@ -436,6 +474,8 @@
             document.body.classList.remove('pdf-mode');
         }
 
+        // TENTA CARREGAR DADOS SALVOS AO INICIAR
+        loadDataFromLocal();
         initUI();
     </script>
 </body>
